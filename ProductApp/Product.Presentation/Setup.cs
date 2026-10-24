@@ -2,7 +2,7 @@
 
 namespace Product.Presentation;
 
-public  static class Setup
+public static class Setup
 {
     public static IServiceCollection ConfigurePresentationDependencies(this IServiceCollection services)
     {

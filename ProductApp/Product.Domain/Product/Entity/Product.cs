@@ -5,7 +5,7 @@ public class Product
     public Guid Id { get; init; }
     public string Name { get; set; }
     public string Description { get; set; }
-    private ICollection<Variant> _variants { get; set; }
+    private readonly ICollection<Variant> _variants = new List<Variant>();
     public ICollection<Variant> Variants => _variants;
 
     public Product(Guid id, string name, string description)

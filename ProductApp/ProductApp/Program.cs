@@ -1,7 +1,16 @@
+using Product.Application;
+using Product.Infrastructure;
+using Product.Presentation;
+using Product.Presentation.CORS;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.ConfigureApplicationDependencies()
+    .ConfigureInfrastructureDependencies(builder.Configuration)
+    .ConfigurePresentationDependencies();
+
+builder.Services.ConfigureCors();
 
 var app = builder.Build();
 
@@ -9,21 +18,17 @@ var app = builder.Build();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// CORS must be before routing/endpoints
+app.UseCorsConfiguration(); 
+
 app.UseRouting();
 
 app.UseAuthorization();
 
-app.MapStaticAssets();
 
-app.MapControllerRoute(
-        name: "default",
-        pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
+app.MapControllers(); 
 
 app.Run();

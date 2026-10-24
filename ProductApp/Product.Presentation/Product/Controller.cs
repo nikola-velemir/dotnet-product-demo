@@ -3,6 +3,7 @@ using Product.Application.Product.Service;
 using Features = Product.Application.Product.Features;
 
 namespace Product.Presentation.Product;
+
 [ApiController]
 [Route("api/products")]
 public class Controller : ControllerBase
@@ -15,14 +16,14 @@ public class Controller : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public IActionResult Get([FromRoute] Features.Get.DTO.Request request)
+    public async Task<IActionResult> Get([FromRoute] Features.Get.DTO.Request request)
     {
-        return Ok(_productService.Get(request));
-    }
-    [HttpPost]
-    public IActionResult Create([FromBody] Features.Create.DTO.Request request)
-    {
-        return Ok(_productService.Create(request));
+        return Ok(await _productService.Get(request));
     }
 
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] Features.Create.DTO.Request request)
+    {
+        return Ok(await _productService.Create(request));
+    }
 }
