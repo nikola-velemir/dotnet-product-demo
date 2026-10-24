@@ -26,4 +26,29 @@ public class Controller : ControllerBase
     {
         return Ok(await _productService.Create(request));
     }
+
+    [HttpGet("byName")]
+    public async Task<IActionResult> GetByName([FromQuery] Features.GetByName.DTO.Request request)
+    {
+        var response = await _productService.GetByName(request);
+        return Ok(response);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(
+        [FromRoute] Guid id,
+        [FromBody] Features.Update.DTO.Request.Body content)
+    {
+        var request = new Features.Update.DTO.Request(id, content);
+        var response = await _productService.Update(request);
+        return Ok(response);
+    }
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(
+        [FromRoute]
+        Features.Delete.DTO.Request request)
+    {
+        var response = await _productService.Delete(request);
+        return Ok(response);
+    }
 }

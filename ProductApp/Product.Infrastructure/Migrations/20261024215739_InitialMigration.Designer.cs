@@ -12,7 +12,7 @@ using Product.Infrastructure.Common.Db;
 namespace Product.Infrastructure.Migrations
 {
     [DbContext(typeof(ProductAppDbContext))]
-    [Migration("20261024170600_InitialMigration")]
+    [Migration("20261024215739_InitialMigration")]
     partial class InitialMigration
     {
         /// <inheritdoc />
@@ -24,6 +24,27 @@ namespace Product.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Product.Domain.Common.Logs.Entity.Log", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("action");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("timestamp");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("logs", (string)null);
+                });
 
             modelBuilder.Entity("Product.Domain.Product.Entity.Product", b =>
                 {

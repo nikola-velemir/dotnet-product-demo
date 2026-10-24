@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Product.Application.Common.Db;
-using Product.Infrastructure.Product.Entity;
+using Product.Domain.Common.Logs.Entity;
+using Products = Product.Infrastructure.Product;
 
 namespace Product.Infrastructure.Common.Db;
 
@@ -9,10 +10,14 @@ namespace Product.Infrastructure.Common.Db;
 /// </summary>
 internal class ProductAppDbContext : DbContext, IDbContext
 {
-    public DbSet<Domain.Product.Entity.Product> Products { get; init; }
     
+    public DbSet<Domain.Product.Entity.Product> Products { get; init; }
+    public DbSet<Log> Logs { get; init; }
+
+
     public ProductAppDbContext(DbContextOptions<ProductAppDbContext> options) : base(options)
     {
+        
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -21,7 +26,8 @@ internal class ProductAppDbContext : DbContext, IDbContext
         //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductAppDbContext).Assembly);
         
         // Ovde je explicitno navedeno koje konfiguracije zelimo
-        modelBuilder.ApplyConfiguration(new Configuration.Product());
-        modelBuilder.ApplyConfiguration(new Configuration.Variant());
+        modelBuilder.ApplyConfiguration(new Products.Entity.Configuration.Product());
+        modelBuilder.ApplyConfiguration(new Products.Entity.Configuration.Variant());
+        modelBuilder.ApplyConfiguration(new Logs.Entity.Configuration());
     }
 }

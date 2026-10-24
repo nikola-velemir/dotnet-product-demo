@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Product.Domain.Common.Logs.Entity;
+
 namespace Product.Application.Common.Db;
 
 using Microsoft.EntityFrameworkCore;
@@ -11,5 +14,7 @@ using Microsoft.EntityFrameworkCore;
 public interface IDbContext
 {
     public DbSet<Domain.Product.Entity.Product> Products { get; init; }
+    public DbSet<Log> Logs { get; init; }
+    DatabaseFacade Database { get;  }
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

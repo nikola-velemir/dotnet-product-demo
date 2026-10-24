@@ -5,7 +5,9 @@ using Get = Product.Application.Product.Features.Get;
 using Create = Product.Application.Product.Features.Create;
 using GetByName = Product.Application.Product.Features.GetByName;
 using Product.Application.Common.Db;
-using Product.Application.Product.Features.GetByName;
+using Product.Application.Common.Logs.Service;
+using Delete = Product.Application.Product.Features.Delete;
+using Update = Product.Application.Product.Features.Update;
 
 namespace Product.Application.Product.Service;
 
@@ -17,10 +19,12 @@ namespace Product.Application.Product.Service;
 internal class ProductService : IProductService
 {
     private readonly IDbContext _dbContext;
+    private readonly ILogService _logService;
 
-    public ProductService(IDbContext dbContext)
+    public ProductService(IDbContext dbContext, ILogService logService)
     {
         _dbContext = dbContext;
+        _logService = logService;
     }
 
 
@@ -75,11 +79,18 @@ internal class ProductService : IProductService
     public Task<List<GetByName.DTO.Response>> GetByName(GetByName.DTO.Request request)
     {
         var name = request.Name;
+
+        // Ovde nije potrebno da radimo Include, kako usecase ne zahteva join na Variants tabelu.
         var queryable = _dbContext.Products.Where(product => product.Name == name);
+
         queryable = queryable.AsNoTracking();
 
         var response = queryable
-            .Select(product => new GetByName.DTO.Response(product.Id, product.Name, product.Description)
+            .Select(product => new GetByName.DTO.Response(
+                    product.Id,
+                    product.Name,
+                    product.Description
+                )
             ).ToListAsync();
 
         return response;
@@ -104,4 +115,59 @@ internal class ProductService : IProductService
             product.Name,
             product.Description);
     }
+
+    public async Task<Delete.DTO.Response> Delete(Delete.DTO.Request request)
+    {
+        var id = request.id;
+        await using var tx = await _dbContext.Database.BeginTransactionAsync();
+
+        var product = await _dbContext.Products.FirstOrDefaultAsync(product => product.Id == id);
+        if (product == null) throw new Exception("Not found");
+
+        _dbContext.Products.Remove(product);
+        await _logService.Create($"Product {product.Name} has been deleted");
+
+        await tx.CommitAsync();
+
+        return new Delete.DTO.Response(product.Id);
+    }
+    
+    public async Task<Update.DTO.Response> Update(Update.DTO.Request request)
+    {
+        var id = request.Id;
+        var content = request.Content;
+        await using var tx = await _dbContext.Database.BeginTransactionAsync();
+    
+        var product = await _dbContext.Products.FirstOrDefaultAsync(product => product.Id == id);
+        if (product == null) throw new Exception("Not found");
+    
+        product.Description = content.Description;
+        product.Name = content.Name;
+    
+        await _logService.Create($"Product {product.Id} has been updated");
+        await _dbContext.SaveChangesAsync();
+        await tx.CommitAsync();
+    
+        return new Update.DTO.Response(product.Id, product.Name, product.Description);
+    }
+    //Ovaj primer bi bacio gresku, metoda LoggingService-a provera da
+    // li postoji transakcija kojoj treba da se prikljuci da bi upisao log.
+    // Kako ne postoji i jedna otpoceta transakcija, bacice exception.
+    // Ovo je neka ideja kako simulirati Propagation.Mandatory u Spring.
+    // public async Task<Update.DTO.Response> Update(Update.DTO.Request request)
+    // {
+    //     var id = request.Id;
+    //     var content = request.Content;
+    //
+    //     var product = await _dbContext.Products.FirstOrDefaultAsync(product => product.Id == id);
+    //     if (product == null) throw new Exception("Not found");
+    //
+    //     product.Description = content.Description;
+    //     product.Name = content.Name;
+    //
+    //     await _logService.Create($"Product {product.Id} has been updated");
+    //     await _dbContext.SaveChangesAsync();
+    //
+    //     return new Update.DTO.Response(product.Id, product.Name, product.Description);
+    // }
 }
