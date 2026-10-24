@@ -28,8 +28,8 @@ internal class ProductService : IProductService
     }
 
 
-    // U .NET koristimo async kljucnu rec i klase Task, iz razloga sto zelimo da omogucimo konkurentan pristup korisnika.
-    // Ukoliko to ne koristimo, svaki poziv serveru blokira druge korisnike.
+    // U .NET koristimo async kljucnu rec i klase Task, iz razloga sto zelimo da omogucimo konkurentan pristup korisnika bazi podataka.
+    // Ukoliko to ne koristimo, thread ostaje blokiran dok ceka bazu podataka, dok on zapravo moze da opsluzi druge korisnike.
     public async Task<Get.DTO.Response> Get(Get.DTO.Request request)
     {
         var id = request.Id;
@@ -42,16 +42,15 @@ internal class ProductService : IProductService
 
         // AsNoTracking optimizacija gasi provere da li u naknadnom kodu ima promena na entitetu.
         // Ako se ne ugasi, Komponenta EntityFrameWorka zaduzena za pracene promena (DirtyChecker valjda :P) ce smatrati da se moze desiti modifkacija objekta,
-        // pa da mora biti perzistirana u bazu podataka.
-        // Za querije koje su singularno dobavljanja, filtriranje i pretraga, koristite AsNoTracking.
+        // pa da mora biti perzistirana u bazu podataka kada se pozove SaveChanges.
+        // Za querije koje su singularno dobavljanja, filtriranje i pretraga, mozete da koristite AsNoTracking.
         queryable = queryable.AsNoTracking();
 
-        // Da ni bismo imali lazy ucitavanje, koristimo Include. Include ce dodano povuci u iz baze varijante. Ovo ce biti objedinjeno u jednom SQL upitu.
-        // Spring ima slican mehanziam, ali je neophodno obratiti paznju da li se entiteti ucitavju eager ili lazy.
-        // Ovo vam je primer eager ucitavanja.
+        // Za eager loading koristimo Include. Include ce dodatno povuci u iz baze varijante. Ovo ce biti objedinjeno u jednom SQL upitu.
+        // Spring ima slican mehanziam, ali je neophodno obratiti paznju da li se entiteti ucitavaju eager ili lazy.
+        // Ovo vam je primer eager ucitavanja. Podrazumevano EF ne radi lazy, variants kolekcija ce biti prazna ako ne radimo Include.
         // Da smo radili lazy, nako nsto bismo pristupili listu u objektu (govorim za Spring), morao bi bi da se posalje jos jedan upit ka bazi.
         // Ovo dovodi do N + 1 problema.
-
         queryable = queryable.Include(product => product.Variants);
 
         // FirstOrDefault(Async) pronalazi prvi red u bazi koji je specificran putem Queryable,
@@ -83,6 +82,7 @@ internal class ProductService : IProductService
         // Ovde nije potrebno da radimo Include, kako usecase ne zahteva join na Variants tabelu.
         var queryable = _dbContext.Products.Where(product => product.Name == name);
 
+        //Ovde as no tracking nije neophodan, radi se projekciju putem Select
         queryable = queryable.AsNoTracking();
 
         var response = queryable
@@ -104,50 +104,46 @@ internal class ProductService : IProductService
         Domain.Product.Entity.Product product
             = Domain.Product.Entity.Product.Create(name, description);
 
-        // Ovde ne zelimo async, zelimo da blokiramo prilikom dodavanja.
+        // Ovde nije neophodan async. Mozemo koristiti AddAsync ako je bas neophodno prvo uradi query u DB radi nekih provera.
         _dbContext.Products.Add(product);
 
         // Ovde cekamo da se zavrsi perzistencija u bazu, Istrazite sta je UNIT OF WORK obrazac,
         // i cemu on sluzi kada budemo pricali o tranzakcijama.
+        // Ovde savechanges nije bas neophodan, jer ga pozivam u LogginService.
         await _dbContext.SaveChangesAsync();
+        
         return new Create.DTO.Response(
             product.Id,
             product.Name,
             product.Description);
     }
 
-    public async Task<Delete.DTO.Response> Delete(Delete.DTO.Request request)
-    {
-        var id = request.id;
-        await using var tx = await _dbContext.Database.BeginTransactionAsync();
 
-        var product = await _dbContext.Products.FirstOrDefaultAsync(product => product.Id == id);
-        if (product == null) throw new Exception("Not found");
-
-        _dbContext.Products.Remove(product);
-        await _logService.Create($"Product {product.Name} has been deleted");
-
-        await tx.CommitAsync();
-
-        return new Delete.DTO.Response(product.Id);
-    }
-    
     public async Task<Update.DTO.Response> Update(Update.DTO.Request request)
     {
         var id = request.Id;
         var content = request.Content;
+        // ovde koristim dispose pattern da zapocnem transakciju. Transkacije se mogu otpoceti na ovaj nacin.
+        // Obicno se koriste da odredimo sta se smatra kao jednom akciju u sistemu.
+        // Implementaciono ovde je neohpodno otpoceti transakciju, kako zelim da se 
+        // logging servis prikljuci postojecoj transakciji
         await using var tx = await _dbContext.Database.BeginTransactionAsync();
-    
+
         var product = await _dbContext.Products.FirstOrDefaultAsync(product => product.Id == id);
         if (product == null) throw new Exception("Not found");
-    
+
         product.Description = content.Description;
         product.Name = content.Name;
-    
+
         await _logService.Create($"Product {product.Id} has been updated");
+        // SaveChanges salje SQL u bazu unutar otvorene transakcije.
+        // Promene jos nisu trajne niti vidljive drugima dok se transakcija ne komituje.
         await _dbContext.SaveChangesAsync();
+
+        // Commit cini promene trajnim. Da je pre ovoga bacen exception,
+        // Dispose (await using) bi uradio rollback.
         await tx.CommitAsync();
-    
+
         return new Update.DTO.Response(product.Id, product.Name, product.Description);
     }
     //Ovaj primer bi bacio gresku, metoda LoggingService-a provera da
@@ -170,4 +166,20 @@ internal class ProductService : IProductService
     //
     //     return new Update.DTO.Response(product.Id, product.Name, product.Description);
     // }
+
+    public async Task<Delete.DTO.Response> Delete(Delete.DTO.Request request)
+    {
+        var id = request.id;
+        await using var tx = await _dbContext.Database.BeginTransactionAsync();
+
+        var product = await _dbContext.Products.FirstOrDefaultAsync(product => product.Id == id);
+        if (product == null) throw new Exception("Not found");
+
+        _dbContext.Products.Remove(product);
+        await _logService.Create($"Product {product.Name} has been deleted");
+
+        await tx.CommitAsync();
+
+        return new Delete.DTO.Response(product.Id);
+    }
 }
