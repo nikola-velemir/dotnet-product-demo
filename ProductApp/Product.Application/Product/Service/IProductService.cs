@@ -1,6 +1,8 @@
 // Ovde je odredjeno preimenovanje namespace-a radi koriscenja namespace sintakse.
+
 using Get = Product.Application.Product.Features.Get;
 using Create = Product.Application.Product.Features.Create;
+using GetByName = Product.Application.Product.Features.GetByName;
 
 namespace Product.Application.Product.Service;
 
@@ -9,6 +11,7 @@ namespace Product.Application.Product.Service;
 /// </summary>
 public interface IProductService
 {
+    Task<List<GetByName.DTO.Response>> GetByName(GetByName.DTO.Request request);
     Task<Get.DTO.Response> Get(Get.DTO.Request request);
     Task<Create.DTO.Response> Create(Create.DTO.Request request);
 }

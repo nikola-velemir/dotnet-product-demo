@@ -3,7 +3,9 @@
 using Microsoft.EntityFrameworkCore;
 using Get = Product.Application.Product.Features.Get;
 using Create = Product.Application.Product.Features.Create;
+using GetByName = Product.Application.Product.Features.GetByName;
 using Product.Application.Common.Db;
+using Product.Application.Product.Features.GetByName;
 
 namespace Product.Application.Product.Service;
 
@@ -30,7 +32,7 @@ internal class ProductService : IProductService
         // Intefejs QUERYABLE vam dozvoljavam da napraviti specifikaciju SQL querija u kodu.
         // Kada ga napravite, query se ne salje odmah u bazu,
         // potrebno je nakon toga pozvati neku operaciju koja ga "TERMINIRA".
-        // Neke od takvih operacija su FirstOrdDefault(Async), Select, SelectMany, ToList,...
+        // Neke od takvih operacija su FirstOrdDefault(Async), ToList(Async), Count(Async),...
         IQueryable<Domain.Product.Entity.Product> queryable = _dbContext.Products.Where(product => product.Id == id);
 
 
@@ -70,6 +72,18 @@ internal class ProductService : IProductService
         return response;
     }
 
+    public Task<List<GetByName.DTO.Response>> GetByName(GetByName.DTO.Request request)
+    {
+        var name = request.Name;
+        var queryable = _dbContext.Products.Where(product => product.Name == name);
+        queryable = queryable.AsNoTracking();
+
+        var response = queryable
+            .Select(product => new GetByName.DTO.Response(product.Id, product.Name, product.Description)
+            ).ToListAsync();
+
+        return response;
+    }
 
     public async Task<Create.DTO.Response> Create(Create.DTO.Request request)
     {
