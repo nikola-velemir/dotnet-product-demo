@@ -39,6 +39,7 @@ internal class Configuration
             builder.HasMany(p => p.Variants)
                 .WithOne()
                 .HasForeignKey("productId")
+                //Specificiram da je ponasanje prilikom brisanja kaskadno, odnosno kadase obrise product brisu se i varijante
                 .OnDelete(DeleteBehavior.Cascade);
 
             // EF cita kolekciju direktno preko private polja _variants (ne preko property-ja).

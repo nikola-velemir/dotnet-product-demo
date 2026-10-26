@@ -13,8 +13,14 @@ using Microsoft.EntityFrameworkCore;
 /// </summary>
 public interface IDbContext
 {
+    // Set za proizvode, efektivno je tabela i repozitorijum. Sadrzi sve metode neohpodne za upravljanje.
     public DbSet<Domain.Product.Entity.Product> Products { get; init; }
+    
+    // Set za logove, efektivno je tabela i repozitorijum. Sadrzi sve metode neohpodne za upravljanje.
     public DbSet<Log> Logs { get; init; }
+    
+    // Primarno mi sluzi da bi otpocinjao transakije.
     DatabaseFacade Database { get;  }
+    // Sluzi mi za perzistenciju promena u bazu podataka. DBContext klasa iz EF ima isti potpis metode.
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -10,7 +10,7 @@ namespace Product.Infrastructure.Common.Db;
 /// </summary>
 internal class ProductAppDbContext : DbContext, IDbContext
 {
-    
+    // Sve navedene metode i proerty-ji su ovde implementirani, definisani prethodno unutar interfejsa IDbContext
     public DbSet<Domain.Product.Entity.Product> Products { get; init; }
     public DbSet<Log> Logs { get; init; }
 

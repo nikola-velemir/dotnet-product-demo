@@ -6,6 +6,7 @@ using Product.Presentation.CORS;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+// Ovde uvezujem pozive metoda jer prakticnko korstim "Fluent Builder" pattern.
 builder.Services.ConfigureApplicationDependencies()
     .ConfigureInfrastructureDependencies(builder.Configuration)
     .ConfigurePresentationDependencies();
