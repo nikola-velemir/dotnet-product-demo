@@ -2,82 +2,83 @@
 
 ## Predgovor
 
-Ja (vas asistent Nikola) sam svestan da niste radili .NET na nacin gde biste imali pravu Web aplikaciju. Zato sam odlucio da za vreme jednog vikenda napravim mini demo, koji je pokriven komentarima, da steknete osecaj kako to treba otprilike biti odradjeno u .NET.
+Ja (vaš asistent Nikola) svestan sam da niste radili .NET na način na koji biste imali pravu web aplikaciju. Zato sam odlučio da tokom jednog vikenda napravim mini demo, pokriven komentarima, kako biste stekli osećaj kako bi to otprilike izgledalo u .NET-u.
+
+**OVAJ PROJEKAT JE DEMONSTRATIVNOG KARAKTERA**
 
 ## O aplikaciji
 
-Aplikacija korsti EF core kao ORM. Pokazuje vam kako se radi injekcija zavisnosti, kao i da imate migracije baze koja vam omogucava laksi kolaborativni rad.
+Aplikacija koristi EF Core kao ORM. Pokazuje vam kako se radi injekcija zavisnosti, a imate i migracije baze koje vam omogućavaju lakši kolaborativni rad.
 
-Aplikacija je organizovana u 4 mini projekta, sa petim kao entry point gde se uvezu svi neophodni projekti. Aplikacija prati princi **Clean Architecture**, odnosno podela po slojevima je sledeca:
+Aplikacija je organizovana u 4 mini projekta, sa petim kao ulaznom tačkom (entry point) u kojoj se povežu svi neophodni projekti. Aplikacija prati princip **Clean Architecture**, odnosno podela po slojevima je sledeća:
 
-- **Domain**: Ovaj sloj koristi POCO klase, modeluje entitete iz konkretnog poslovnog domena kojim se aplikacija bavi (u ovom slucaju neki proizvodi). Domen ne bi trebao da ima ikakve zavisnosti (druge vase projekte, i u sustini biblioteke koje skinete preko NuGet), niti da sadrzi logiku orkestracije domenskih entiteta (slucajevi koriscenja), niti nacine perzistencije. Prakticno jako "glup" sloj, sadrzi osnovnu logiku koja modeluje pravila domena. Najcesce sadrzi entitete, servise (klase sa logikom) koji sprovode biznis pravila.
+- **Domain**: Ovaj sloj koristi POCO klase i modeluje entitete iz konkretnog poslovnog domena kojim se aplikacija bavi (u ovom slučaju neki proizvodi). Domen ne bi trebalo da ima nikakve zavisnosti (druge vaše projekte, a u suštini ni biblioteke koje skinete preko NuGet-a), niti da sadrži logiku orkestracije domenskih entiteta (slučajeve korišćenja), niti načine perzistencije. Praktično, veoma „glup" sloj koji sadrži osnovnu logiku koja modeluje pravila domena. Najčešće sadrži entitete i servise (klase sa logikom) koji sprovode poslovna pravila.
 
-- **Application**: Sloj vrsi okrestraciju domena, odnosno modeluje slucajeve koriscenja. Moze da referencira druge biblioteke (koje skinete kroz NuGet package manager), ali sme da referencira sustinski samo domenske projekte. Ovde cete spoznati servisne klase koje modeluju CRUD operacije. Ovde cete isto videti mnostvo interfejsa (najpre IDbContext), koji sluze kao apstrakcije. Servisne klase znaju samo za ove ugovore, i ne tice ih se kako se konrketna logika sprovodi. Prave implementacije ovih ugovora se nalaze u spoljasnim slojevima (npr. implementacija IDbContext (koji je u ovom sloju) je ProductAppDbContext koji se nalazi u infrastrukturnom sloju). Ovo je DIP princip, to ste radili kod profesora Luburica.
+- **Application**: Sloj vrši orkestraciju domena, odnosno modeluje slučajeve korišćenja. Može da referencira druge biblioteke (koje skinete kroz NuGet package manager), ali sme da referencira suštinski samo domenske projekte. Ovde ćete upoznati servisne klase koje modeluju CRUD operacije. Ovde ćete takođe videti mnoštvo interfejsa (pre svega IDbContext), koji služe kao apstrakcije. Servisne klase znaju samo za ove ugovore i ne tiče ih se kako se konkretna logika sprovodi. Prave implementacije ovih ugovora nalaze se u spoljašnjim slojevima (npr. implementacija IDbContext-a (koji je u ovom sloju) je ProductAppDbContext, koji se nalazi u infrastrukturnom sloju). Ovo je DIP princip, to ste radili kod profesora Luburića.
 
-- **Presentation**: Sloj sadrzi REST konrolerske klase, i bavi se prezentacijom sadrzaja i deluje kao prva linija fronta izmedju korisnika i aplikacije. Ovaj sloj sustinski prima zahteve, te te zahteve delegira aplikacionom sloju da se obavi logika slucaja koriscenja, te se vrati rezultat ponovo prezentacionom.
+- **Presentation**: Sloj sadrži REST kontrolerske klase i bavi se prezentacijom sadržaja, te deluje kao prva linija fronta između korisnika i aplikacije. Ovaj sloj suštinski prima zahteve i delegira ih aplikacionom sloju, koji obavlja logiku slučaja korišćenja, nakon čega se rezultat vraća prezentacionom sloju.
 
-- **Infrastructure**: Primarna uloga sloja je nacin perzistencije podataka. Ovde se nalaze konkretne implementacije repozitorijuma, migacije, kao i konfigurisani nacini kako se domenski entiteti perzistiraju u bazu podataka (IEntityConfiguration implementacije). Pored perzistencije, u slucaju da vam treba komunikacija sa drugim servisom (vasim ili stranim), implementacije ove komunikacije trebaju ovde da se nalaze, a njihovi ugovori (interfejsi) su u aplikacionom sloju.
+- **Infrastructure**: Primarna uloga sloja je način perzistencije podataka. Ovde se nalaze konkretne implementacije repozitorijuma, migracije, kao i konfigurisani načini na koje se domenski entiteti perzistiraju u bazu podataka (IEntityConfiguration implementacije). Pored perzistencije, ako vam treba komunikacija sa drugim servisom (vašim ili tuđim), implementacije te komunikacije treba da se nalaze ovde, a njihovi ugovori (interfejsi) u aplikacionom sloju.
 
-**Infrastructe** i **Prezentation** slojevi referenciraju **Aplication** sloj.
+**Infrastructure** i **Presentation** slojevi referenciraju **Application** sloj.
 
 ## Komentar na _Repository pattern_
 
-Radili ste kod profesora Luburica da Repository klase (ili DAO klase) trebaju da imaju svoj interfejs i implementaciju. U .NET to ne zelimo, iz razloga zato sto nam za ralzicite slucajeve koriscenja treba razlicita implementacija.
+Radili ste kod profesora Luburića da Repository klase (ili DAO klase) treba da imaju svoj interfejs i implementaciju. U .NET-u to ne želimo, zato što nam za različite slučajeve korišćenja treba različita implementacija.
 
-Za primer:
-U jednom slucaju koriscenja dobavljam dodante entitete uz moj entitet. U drom mi treba samo taj osnovni entitet. Ako implementaciju repozitorijuma "zakucate" da mora da dobavi i dodatne entitete, to se tesko menja (postoji nacin koji se zove _Repository Specification pattern_, ali sto se muciti). Umesto toga direktno koristimo DbContext od EF Core, odnosno IDbContext. On je sam po sebi _Repository pattern_. Iako je kontra argument da krsimo DRY princip, ja kazem da je bolje ovde koristiti samo ovaj interfejs svakako (moze se reci da radimo RUG (_Repeat Until Good_) `:)`).
+Na primer: u jednom slučaju korišćenja dobavljam dodatne entitete uz moj entitet, a u drugom mi treba samo taj osnovni entitet. Ako implementaciju repozitorijuma „zakucate" tako da mora da dobavi i dodatne entitete, to se teško menja (postoji način koji se zove _Repository Specification pattern_, ali što se mučiti). Umesto toga direktno koristimo DbContext iz EF Core-a, odnosno IDbContext. On je sam po sebi _Repository pattern_. Iako je kontraargument da kršimo DRY princip, ja kažem da je bolje u svakom slučaju ovde koristiti samo ovaj interfejs (može se reći da radimo RUG (_Repeat Until Good_)) `:)`.
 
-## Komentar na servise u **Aplication** sloju
+## Komentar na servise u **Application** sloju
 
-Ja ne volim da koristim servise za modelovanje slucajeva koriscenja, jer servisi vremenom postanu ogromni. Kad ove klase otvorim, zaboli me glava. Sevise (al bas nesto sto zovemo servisom) koristim kada je neophodna neka specificna biznis logika (kako u domenskom tako i aplikacionom sloju).
+Ja ne volim da koristim servise za modelovanje slučajeva korišćenja, jer servisi vremenom postanu ogromni. Kad ove klase otvorim, zaboli me glava. Servise (ali baš nešto što zovemo servisom) koristim kada je neophodna neka specifična poslovna logika (kako u domenskom, tako i u aplikacionom sloju).
 
-Zato vise volim da koristim biblioteku `MediatR`. Ovde imam za jedan konkretan slucaj koriscenja tacno jednu klasu koja modeluje njegovu logiku. Mozete istraziti vise o biblioteci na ovim linkvima:
+Zato više volim da koristim biblioteku `MediatR`. Tu imam za jedan konkretan slučaj korišćenja tačno jednu klasu koja modeluje njegovu logiku. Više o biblioteci možete istražiti na ovim linkovima:
 
-- [Opste o MediatR](https://mediatr.io/)
-- [Primeri koriscenja](https://medium.com/codenx/implement-mediator-pattern-with-mediatr-in-c-8a271d7b9901)
+- [Opšte o MediatR-u](https://mediatr.io/)
+- [Primeri korišćenja](https://medium.com/codenx/implement-mediator-pattern-with-mediatr-in-c-8a271d7b9901)
 
 ## Komentar na migracije
 
-Migracija baze podataka vam omogucavaju da generisete kod putem `dotnet ef` alata. Migracije mozete primeniti na bazu, kako bi vam se napravila sema baze podataka. Ovo se radi kako bi svi u timu imali isti izgled baze podataka.
+Migracije baze podataka omogućavaju vam da generišete kod za migraciju putem alata `dotnet ef`. Migracije možete primeniti na bazu kako bi vam se napravila šema baze podataka. Ovo se radi kako bi svi u timu imali isti izgled baze podataka.
 
-Da napravite migaciju uradite sledece:
+Da biste napravili migraciju, uradite sledeće:
 
 ```bash
 dotnet ef migrations add <ime> --project ./Product.Infrastructure --startup-project ./ProductApp
 ```
 
-ovo ce vam napraviti migraciju sa imenom koje ste zadali. Flag `--project` kaze gde da gleda konfiguracije entiteta, i na kom mestu ce biti fajl za migraciju sacuvan. Flag `--startup-project` kaze koji projekat je onaj od kog se aplikacija podize, ili projekat koji ima intaliran `EntityFrameworkCore.Design` paket.
+Ovo će vam napraviti migraciju sa imenom koje ste zadali. Flag `--project` kaže gde da gleda konfiguracije entiteta i na kom mestu će fajl za migraciju biti sačuvan. Flag `--startup-project` kaže koji projekat je onaj iz kog se aplikacija podiže, odnosno projekat koji ima instaliran paket `EntityFrameworkCore.Design`.
 
-Da bi ste migaciju primenili, trebate da uradite sledece:
+Da biste migraciju primenili, treba da uradite sledeće:
 
 ```bash
 dotnet ef database update --project ./Product.Infrastructure --startup-project ./ProductApp
 ```
 
-Ovo ce vam azurirati bazu podataka sa novom migracijom. Drugim recima, generisace vam se tabele i kolone koje niste imali u bazi, a vi ili neko drugi je napravio migraciju.
+Ovo će ažurirati bazu podataka novom migracijom. Drugim rečima, generisaće se tabele i kolone koje niste imali u bazi, a koje je neko napravio kroz migraciju.
 
 ## Pokretanje aplikacije
 
-Ovde sam vam ostavio `compose.yml`. Putem **Docker-a** (pogledajte sta je), mozete da udarite jednu komandu u terminal, te tako podignete bazu sa konfiguracijom koja je u `compose.yml`. Ovime ne morate isntalirati `PostreSQL` na lokalnu masinu. Ovo mozete koristiti (cak i sta vise savetujem da stalno koristite) na projektu, jer je pristup jako fleksibilan. Prakticno eliminisete potrebu za instalacijom milijardu servisa.
+Ovde sam vam ostavio `compose.yml`. Putem **Docker-a** (pogledajte šta je) možete da unesete jednu komandu u terminal i tako podignete bazu sa konfiguracijom koja je u `compose.yml`. Time ne morate da instalirate `PostgreSQL` na lokalnu mašinu. Ovo možete koristiti (štaviše, savetujem da stalno koristite) na projektu, jer je pristup veoma fleksibilan. Praktično eliminišete potrebu za instalacijom milijardu servisa.
 
-Ako imate **Docker** ili **Docker Desktop** (ovo je za Windows) instaliran, u terminalu samo uradite:
+Ako imate instaliran **Docker** ili **Docker Desktop** (ovo je za Windows), u terminalu samo uradite:
 
 ```bash
 docker compose up
-# ili ako ne zelite da sebi "zabodete" terminal
+# ili ako ne želite da vam zauzme terminal
 docker compose up -d
 ```
 
-Ovo ce povuci **sliku** (nesto kao instalacija ovog servisa) za `PostreSQL`, i pokrenuti je na portu `5432`.
+Ovo će povući **sliku** (nešto kao instalacija ovog servisa) za `PostgreSQL` i pokrenuti je na portu `5432`.
 
-Aplikaciju pokrecete iz **Visual Studio**, ili **Jetbrains Rider**. Aplikacija trci na adresi `http://localhost:5000`. Putem alata **Postman** mozete da joj saljete zahteve.
+Aplikaciju pokrećete iz **Visual Studija** ili **JetBrains Ridera**. Aplikacija radi na adresi `http://localhost:5000`. Putem alata **Postman** možete da joj šaljete zahteve.
 
-Kada zavrsite rad sa aplikacijom, u termialu gde ste "podigli" `compose.yml`, uradite sledece:
+Kada završite rad sa aplikacijom, u terminalu gde ste pokrenuli `compose.yml` uradite sledeće:
 
 ```bash
 docker compose down
 ```
 
-Ovo ce ugasiti `PostreSQL` servis, i osloboditi port `5432`.
+Ovo će ugasiti `PostgreSQL` servis i osloboditi port `5432`.
 
-**Sretan rad i sretno istrazivanje `:)`**
+**Srećan rad i uspešno istraživanje** `:)`
