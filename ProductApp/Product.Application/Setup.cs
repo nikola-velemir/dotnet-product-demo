@@ -15,7 +15,8 @@ public static class Setup
         // - Scoped - instanca se kreira jednom po http zahtevu
         // - Transient - instanca se kreira kada god je neka druga zavisnost zahteva (u toku istog http zahteva)
         // - Singleton - instanca se kreira jednom kada se aplikacija pokrene
-        // Pazite da ne koristite scoped instance u singleton objektima, ovo izaziva gresku jer se ne moze napraviti scoped instanca, kako pri pokretanju aplikacije ne postoji HTTP zahtev
+        // Pazite da ne koristite scoped instance u singleton objektima, ovo izaziva gresku jer se ne moze napraviti scoped instanca,
+        // kako pri pokretanju aplikacije ne postoji HTTP zahtev
         
         // Dodavanje ProductService kao zavisnosti, apstrakcija je IProductService.
         // Zivonti ciklus je Scoped, odnosno kreira se instanca pri prijemu http zahteva.
