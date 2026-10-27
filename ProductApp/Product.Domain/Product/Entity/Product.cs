@@ -2,6 +2,7 @@
 
 public class Product
 {
+    // Koristim tip Guid jer je random generisan, nema potrebu za nekim sekvecnama za geenirsanje id-jeva.
     // kazem da je setter init, ne zelim da ikada menjam ID
     public Guid Id { get; init; }
     // Ovde moze setter da bude set;, zelim da menjam ime prilikom update.
