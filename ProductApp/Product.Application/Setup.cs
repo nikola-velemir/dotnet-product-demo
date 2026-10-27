@@ -24,7 +24,7 @@ public static class Setup
         
         //Dodavanja LogService kao zavisnosti, apstrakcija je ILogService.
         //Zivotni ciklus je Transient, odnosno kreira se kada ga bilo koja druga zavisnost zahteva.
-        //Drugim recima, ako dve razlicite zavisnost zahtevaju ovaj servis, to ce biti dve potpuno razlicite instance.
+        //Drugim recima, ako dve razlicite zavisnost zahtevaju ovaj servis, to ce biti dve potpuno razlicite instance ovog servisa.
         services.AddTransient<ILogService, LogService>();
         return services;
     }
