@@ -20,9 +20,8 @@ x86/
 bld/
 [Bb]in/
 [Oo]bj/
-[Ll]og/
-[Ll]ogs/
-
+.idea
+.idea/
 # .NET Core
 project.lock.json
 project.fragment.lock.json
