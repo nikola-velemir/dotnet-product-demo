@@ -1,10 +1,11 @@
 # .NET aplikacija za E2
 
+## **OVAJ PROJEKAT JE DEMONSTRATIVNOG KARAKTERA**
+
 ## Predgovor
 
 Ja (vaš asistent Nikola) svestan sam da niste radili .NET na način na koji biste imali pravu web aplikaciju. Zato sam odlučio da tokom jednog vikenda napravim mini demo, pokriven komentarima, kako biste stekli osećaj kako bi to otprilike izgledalo u .NET-u.
 
-**OVAJ PROJEKAT JE DEMONSTRATIVNOG KARAKTERA**
 
 ## O aplikaciji
 
