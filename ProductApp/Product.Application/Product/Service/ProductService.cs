@@ -108,8 +108,9 @@ internal class ProductService : IProductService
         _dbContext.Products.Add(product);
 
         // Ovde cekamo da se zavrsi perzistencija u bazu, Istrazite sta je UNIT OF WORK obrazac,
-        // i cemu on sluzi kada budemo pricali o tranzakcijama.
-        // Ovde savechanges nije bas neophodan, jer ga pozivam u LogginService.
+        // i cemu on sluzi kada budemo pricali o transakcijama.
+        // Ovde se sve promene koje je EF core change tracker pratio upisuju u bazu
+        // Ovo se zove implicitna transakcija, jer nisam prethodnu otpoceo
         await _dbContext.SaveChangesAsync();
         
         return new Create.DTO.Response(
@@ -119,12 +120,44 @@ internal class ProductService : IProductService
     }
 
 
+    //stavio sam ovde private samo da znate da nije opisan ugovorom IProductService
+    private async Task<Create.DTO.Response> CreateWithExplicitTransaction(Create.DTO.Request request)
+    {
+        var name = request.Name;
+        var description = request.Description;
+        //ovde otpocinjem eksplicitno novu transakciju
+        await using var tx = await _dbContext.Database.BeginTransactionAsync();
+
+
+        Domain.Product.Entity.Product product
+            = Domain.Product.Entity.Product.Create(name, description);
+
+        // Ovde nije neophodan async. Mozemo koristiti AddAsync ako je bas neophodno prvo uradi query u DB radi nekih provera.
+        _dbContext.Products.Add(product);
+
+        // Ovde cekamo da se zavrsi perzistencija u bazu, ali kako sam zapoceo eksplicitno transakciju, promene
+        // nisu trajne dok ne odradim CommitAsync.
+        // Ovde moze nastati problem ako nivo izloacije u bazi je default READ_UNCOMMITED, pa se desava problem dirty read-a.
+        // Vecina baza default imaju READ_COMMITED, odnosno ove promene iako su upisane u bazu, a nisu commit-ovane,
+        // nece biti vidljive drugima. Obratite paznju koji je podrazumevani nivo izolacije za vasu bazu podataka.
+        // npr. PostreSQL default je READ_COMMITED, tako da ovo nije problem.
+        await _dbContext.SaveChangesAsync();
+        
+        // Ovde komitujem transakciju da promene ostanu u bazi.
+        await tx.CommitAsync();
+        
+        return new Create.DTO.Response(
+            product.Id,
+            product.Name,
+            product.Description);
+    }
+
     public async Task<Update.DTO.Response> Update(Update.DTO.Request request)
     {
         var id = request.Id;
         var content = request.Content;
         // ovde koristim dispose pattern da zapocnem transakciju. Transkacije se mogu otpoceti na ovaj nacin.
-        // Obicno se koriste da odredimo sta se smatra kao jednom akciju u sistemu.
+        // Obicno se koriste da odredimo sta se smatra kao jednom akcijom u sistemu.
         // Implementaciono ovde je neohpodno otpoceti transakciju, kako zelim da se 
         // logging servis prikljuci postojecoj transakciji
         await using var tx = await _dbContext.Database.BeginTransactionAsync();
@@ -137,7 +170,7 @@ internal class ProductService : IProductService
 
         await _logService.Create($"Product {product.Id} has been updated");
         // SaveChanges salje SQL u bazu unutar otvorene transakcije.
-        // Promene jos nisu trajne niti vidljive drugima dok se transakcija ne komituje.
+        // Promene jos nisu trajne niti vidljive drugima dok se transakcija ne komituje (zavisi od nivoa izolacije).
         await _dbContext.SaveChangesAsync();
 
         // Commit cini promene trajnim. Da je pre ovoga bacen exception,

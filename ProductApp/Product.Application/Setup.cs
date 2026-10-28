@@ -5,14 +5,15 @@ using Product.Application.Product.Service;
 namespace Product.Application;
 
 /// <summary>
-/// Koristimo static da bi mogli da vezujemo pozive.
+/// Koristimo static da bi mogli da vezujemo pozive. Ovo se zove fluent builder pattern.
 /// </summary>
 public static class Setup
 {
+    // metoda koju cu pozvati u Program.cs u entrypoint projektu (ProductApp)
     public static IServiceCollection ConfigureApplicationDependencies(this IServiceCollection services)
     {
         // Od zivotnih ciklusa zavisnosti, koje registrujete u kontejner zavisnosti imate:
-        // - Scoped - instanca se kreira jednom po http zahtevu
+        // - Scoped - instanca se kreira jednom po http zahtevu, potom unistava
         // - Transient - instanca se kreira kada god je neka druga zavisnost zahteva (u toku istog http zahteva)
         // - Singleton - instanca se kreira jednom kada se aplikacija pokrene
         // Pazite da ne koristite scoped instance u singleton objektima, ovo izaziva gresku jer se ne moze napraviti scoped instanca,

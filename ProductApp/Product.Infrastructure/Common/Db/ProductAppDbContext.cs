@@ -15,6 +15,7 @@ internal class ProductAppDbContext : DbContext, IDbContext
     public DbSet<Log> Logs { get; init; }
 
 
+    // ovakva forma konstruktora je neophodna da se napravi DBcontext.
     public ProductAppDbContext(DbContextOptions<ProductAppDbContext> options) : base(options)
     {
         

@@ -43,7 +43,7 @@ public class Controller : ControllerBase
 
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(
-        // Ovde AspNetCore ne moze sve da upakuje u Request, stoga putem [FromROute] izvucemo Id,
+        // Ovde AspNetCore ne moze sve da upakuje u Request, stoga putem [FromRoute] izvucemo Id,
         // pa putem [FromBody] uzmemo ono sto je u telu http zahteva i u metodi kreiramo request objekat koji damo servisu.
         [FromRoute] Guid id,
         [FromBody] Features.Update.DTO.Request.Body content)
